@@ -14,85 +14,84 @@ public class HttpListenerPort : MonoBehaviour {
 	[SerializeField]
 	Text URI;
 	[SerializeField]
-	 Text Status;
-	
-	void Start()
-	{
+	Text Status;
+
+	void Start () {
 		URI.text = "http://127.0.0.1:12345/";
 	}
 
 	public void DoStart () {
-		listener = new HttpListener();
+		listener = new HttpListener ();
 		string uriprefix = URI.text;
 		/* if (uriprefix.Length == 0)
 			uriprefix =  ;*/
-		Debug.Log("Starting with prefix: " + uriprefix);
-		listener.Prefixes.Add(uriprefix);
-		listener.Start();
-		Debug.Log("IsListening: " + listener.IsListening);
-		
-		IPEndPoint endpoint = CreateListenerRequest(listener, uriprefix);
-		Debug.Log("Using port : " + endpoint.Port);
+		Debug.Log ("Starting with prefix: " + uriprefix);
+		listener.Prefixes.Add (uriprefix);
+		listener.Start ();
+		Debug.Log ("IsListening: " + listener.IsListening);
+
+		IPEndPoint endpoint = CreateListenerRequest (listener, uriprefix);
+		Debug.Log ("Using port : " + endpoint.Port);
 	}
-	public IPEndPoint CreateListenerRequest (HttpListener listener, string uri)
-		{
-			IPEndPoint ipEndPoint = null;
-			var mre = new System.Threading.ManualResetEvent (false);
-			listener.BeginGetContext (result => {
-				ipEndPoint = ListenerCallback (result);
-				mre.Set ();
-			}, listener);
+	public IPEndPoint CreateListenerRequest (HttpListener listener, string uri) {
+		IPEndPoint ipEndPoint = null;
+		var mre = new System.Threading.ManualResetEvent (false);
+		listener.BeginGetContext (result => {
+			ipEndPoint = ListenerCallback (result);
+			mre.Set ();
+		}, listener);
 
-			var request = (HttpWebRequest) WebRequest.Create (uri);
-			request.Method = "POST";
+		var request = (HttpWebRequest) WebRequest.Create (uri);
+		request.Method = "POST";
 
-			// We need to write something
-			request.GetRequestStream ().Write (new byte [] {(byte)'a'}, 0, 1);
-			request.GetRequestStream ().Dispose ();
+		// We need to write something
+		request.GetRequestStream ().Write (new byte[] {
+			(byte)
+			'a'
+		}, 0, 1);
+		request.GetRequestStream ().Dispose ();
 
-			// Send request, socket is created or reused.
-			var response = request.GetResponse ();
+		// Send request, socket is created or reused.
+		var response = request.GetResponse ();
 
-			Debug.Log("HI: " + response.ResponseUri);
+		Debug.Log ("HI: " + response.ResponseUri);
 
-			// Close response so socket can be reused.
-			response.Close ();
+		// Close response so socket can be reused.
+		response.Close ();
 
-			mre.WaitOne();
+		mre.WaitOne ();
 
-			return ipEndPoint;
-		}
+		return ipEndPoint;
+	}
 
-		public static IPEndPoint ListenerCallback (IAsyncResult result)
-		{
-			var listener = (HttpListener) result.AsyncState;
-			var context = listener.EndGetContext (result);
-			var clientEndPoint = context.Request.RemoteEndPoint;
+	public static IPEndPoint ListenerCallback (IAsyncResult result) {
+		var listener = (HttpListener) result.AsyncState;
+		var context = listener.EndGetContext (result);
+		var clientEndPoint = context.Request.RemoteEndPoint;
 
-			// Disposing InputStream should not avoid socket reuse
-			context.Request.InputStream.Dispose ();
+		// Disposing InputStream should not avoid socket reuse
+		context.Request.InputStream.Dispose ();
 
-			// Close OutputStream to send response
-			context.Response.OutputStream.Close ();
+		// Close OutputStream to send response
+		context.Response.OutputStream.Close ();
 
-			return clientEndPoint;
-		}
+		return clientEndPoint;
+	}
 
-	void Update() {
+	void Update () {
 		if (listener != null && listener.IsListening) {
 			Status.text = "Started";
-		}
-		else {
+		} else {
 			Status.text = "Stopped";
 		}
-		StartButton.gameObject.SetActive(listener == null || !listener.IsListening);
-		StopButton.gameObject.SetActive(listener != null && listener.IsListening);
+		StartButton.gameObject.SetActive (listener == null || !listener.IsListening);
+		StopButton.gameObject.SetActive (listener != null && listener.IsListening);
 	}
-	
-	public void DoStop() {
+
+	public void DoStop () {
 		if (listener != null) {
-			Debug.Log("Stopping listener");
-			listener.Stop();
+			Debug.Log ("Stopping listener");
+			listener.Stop ();
 		}
 		listener = null;
 	}
