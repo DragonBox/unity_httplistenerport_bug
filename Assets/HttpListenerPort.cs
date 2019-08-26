@@ -1,9 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net;
 using UnityEngine;
 using UnityEngine.UI;
+using WWTK.OSUtils;
 
-public class HttpListenerPort : MonoBehaviour {
+public class HttpListenerPort : MonoBehaviour
+{
 
 	HttpListener listener;
 
@@ -15,84 +18,115 @@ public class HttpListenerPort : MonoBehaviour {
 	Text URI;
 	[SerializeField]
 	Text Status;
+	[SerializeField]
+	Text Pid;
 
-	void Start () {
+	[SerializeField]
+	Text OpenedPort;
+
+	void Start()
+	{
 		URI.text = "http://127.0.0.1:12345/";
+
+		Pid.text = "Pid : " + System.Diagnostics.Process.GetCurrentProcess().Id.ToString();
+		Debug.Log(Pid.text);
 	}
 
-	public void DoStart () {
-		listener = new HttpListener ();
+	public void DoStart()
+	{
+		listener = new HttpListener();
 		string uriprefix = URI.text;
 		/* if (uriprefix.Length == 0)
 			uriprefix =  ;*/
-		Debug.Log ("Starting with prefix: " + uriprefix);
-		listener.Prefixes.Add (uriprefix);
-		listener.Start ();
-		Debug.Log ("IsListening: " + listener.IsListening);
+		Debug.Log("Starting with prefix: " + uriprefix);
+		listener.Prefixes.Add(uriprefix);
+		listener.Start();
+		Debug.Log("IsListening: " + listener.IsListening);
 
-		IPEndPoint endpoint = CreateListenerRequest (listener, uriprefix);
-		Debug.Log ("Using port : " + endpoint.Port);
+		IPEndPoint endpoint = CreateListenerRequest(listener, uriprefix);
+		Debug.Log("Using port : " + endpoint.Port);
 	}
-	public IPEndPoint CreateListenerRequest (HttpListener listener, string uri) {
+	public IPEndPoint CreateListenerRequest(HttpListener listener, string uri)
+	{
 		IPEndPoint ipEndPoint = null;
-		var mre = new System.Threading.ManualResetEvent (false);
-		listener.BeginGetContext (result => {
-			ipEndPoint = ListenerCallback (result);
-			mre.Set ();
+		var mre = new System.Threading.ManualResetEvent(false);
+		listener.BeginGetContext(result =>
+		{
+			ipEndPoint = ListenerCallback(result);
+			mre.Set();
 		}, listener);
 
-		var request = (HttpWebRequest) WebRequest.Create (uri);
+		var request = (HttpWebRequest)WebRequest.Create(uri);
 		request.Method = "POST";
 
 		// We need to write something
-		request.GetRequestStream ().Write (new byte[] {
-			(byte)
-			'a'
-		}, 0, 1);
-		request.GetRequestStream ().Dispose ();
+		request.GetRequestStream().Write(new byte[] {
+			(byte) 'a' }, 0, 1);
+		request.GetRequestStream().Dispose();
 
 		// Send request, socket is created or reused.
-		var response = request.GetResponse ();
+		var response = request.GetResponse();
 
-		Debug.Log ("HI: " + response.ResponseUri);
+		Debug.Log("HI: " + response.ResponseUri);
 
 		// Close response so socket can be reused.
-		response.Close ();
+		response.Close();
 
-		mre.WaitOne ();
+		mre.WaitOne();
 
 		return ipEndPoint;
 	}
 
-	public static IPEndPoint ListenerCallback (IAsyncResult result) {
-		var listener = (HttpListener) result.AsyncState;
-		var context = listener.EndGetContext (result);
+	public static IPEndPoint ListenerCallback(IAsyncResult result)
+	{
+		var listener = (HttpListener)result.AsyncState;
+		var context = listener.EndGetContext(result);
 		var clientEndPoint = context.Request.RemoteEndPoint;
 
 		// Disposing InputStream should not avoid socket reuse
-		context.Request.InputStream.Dispose ();
+		context.Request.InputStream.Dispose();
 
 		// Close OutputStream to send response
-		context.Response.OutputStream.Close ();
+		context.Response.OutputStream.Close();
 
 		return clientEndPoint;
 	}
 
-	void Update () {
-		if (listener != null && listener.IsListening) {
+	void Update()
+	{
+		if (listener != null && listener.IsListening)
+		{
 			Status.text = "Started";
-		} else {
+		}
+		else
+		{
 			Status.text = "Stopped";
 		}
-		StartButton.gameObject.SetActive (listener == null || !listener.IsListening);
-		StopButton.gameObject.SetActive (listener != null && listener.IsListening);
+		StartButton.gameObject.SetActive(listener == null || !listener.IsListening);
+		StopButton.gameObject.SetActive(listener != null && listener.IsListening);
 	}
 
-	public void DoStop () {
-		if (listener != null) {
-			Debug.Log ("Stopping listener");
-			listener.Stop ();
+	public void DoStop()
+	{
+		if (listener != null)
+		{
+			Debug.Log("Stopping listener");
+			listener.Stop();
 		}
 		listener = null;
+	}
+
+	public void DoGetPorts()
+	{
+		OpenedPort.text = "";
+		List<Port> ports = OSUtils.GetNetStatPorts();
+		foreach (Port port in ports)
+		{
+			if (port.pid == System.Diagnostics.Process.GetCurrentProcess().Id)
+			{
+				OpenedPort.text = OpenedPort.text + port.port_number + " ";
+			}
+			//Debug.Log("Ports : " + port.pid.ToString());
+		}
 	}
 }
