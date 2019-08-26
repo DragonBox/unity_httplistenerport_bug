@@ -19,7 +19,7 @@ namespace WWTK.OSUtils
 			}
 			set { }
 		}
-		public string port_number { get; set; }
+		public int port_number { get; set; }
 		public string process_name { get; set; }
 		public string protocol { get; set; }
 		public int pid { get; set; }
@@ -57,9 +57,13 @@ namespace WWTK.OSUtils
 					string content = stdOutput.ReadToEnd() + stdError.ReadToEnd();
 					string exitStatus = p.ExitCode.ToString();
 
+					UnityEngine.Debug.Log(content);
+
 					if (exitStatus != "0")
 					{
-						// Command Errored. Handle Here If Need Be
+						UnityEngine.Debug.LogError("Command failed " + exitStatus);
+						UnityEngine.Debug.Log(content);
+						throw new System.Exception("Failed running Netstats " + exitStatus);
 					}
 
 					//Get The Rows
@@ -74,9 +78,9 @@ namespace WWTK.OSUtils
 							Ports.Add(new Port
 							{
 								protocol = localAddress.Contains("1.1.1.1") ? String.Format("{0}v6", tokens[1]) : String.Format("{0}v4", tokens[1]),
-								port_number = localAddress.Split(':')[1],
-								process_name = tokens[1] == "UDP" ? LookupProcess(Convert.ToInt16(tokens[4])) : LookupProcess(Convert.ToInt16(tokens[5])),
-								pid = Convert.ToInt16(tokens[5])
+								port_number = int.Parse(localAddress.Split(':')[1]),
+								process_name = tokens[1] == "UDP" ? LookupProcess(Convert.ToInt32(tokens[4])) : LookupProcess(Convert.ToInt32(tokens[5])),
+								pid = Convert.ToInt32(tokens[5])
 							});
 						}
 					}
@@ -84,7 +88,7 @@ namespace WWTK.OSUtils
 			}
 			catch (Exception ex)
 			{
-				Console.WriteLine(ex.Message);
+				UnityEngine.Debug.LogException(ex);
 			}
 			return Ports;
 		}

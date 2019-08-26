@@ -26,8 +26,6 @@ public class HttpListenerPort : MonoBehaviour
 
 	void Start()
 	{
-		URI.text = "http://127.0.0.1:12345/";
-
 		Pid.text = "Pid : " + System.Diagnostics.Process.GetCurrentProcess().Id.ToString();
 		Debug.Log(Pid.text);
 	}
@@ -43,8 +41,25 @@ public class HttpListenerPort : MonoBehaviour
 		listener.Start();
 		Debug.Log("IsListening: " + listener.IsListening);
 
-		IPEndPoint endpoint = CreateListenerRequest(listener, uriprefix);
-		Debug.Log("Using port : " + endpoint.Port);
+		if (listener.IsListening)
+		{
+			try
+			{
+				IPEndPoint endpoint = CreateListenerRequest(listener, uriprefix);
+				Debug.Log("Using port : " + endpoint.Port);
+			}
+			catch (WebException e)
+			{
+				Debug.Log("Couldn't connect to port: " + e);
+				Debug.Log("HttpListener port not found. Trying to detect it...");
+				int port = FindOneOpenPort();
+				if (port != -1)
+				{
+					uriprefix = System.Text.RegularExpressions.Regex.Replace(uriprefix, @":(.*?)/", port.ToString());
+					Debug.Log("uri is " + uriprefix);
+				}
+			}
+		}
 	}
 	public IPEndPoint CreateListenerRequest(HttpListener listener, string uri)
 	{
@@ -126,7 +141,28 @@ public class HttpListenerPort : MonoBehaviour
 			{
 				OpenedPort.text = OpenedPort.text + port.port_number + " ";
 			}
-			//Debug.Log("Ports : " + port.pid.ToString());
+			// Debug.Log("Ports : " + port.name);
 		}
+	}
+
+	int FindOneOpenPort()
+	{
+		if (Application.platform == RuntimePlatform.WindowsPlayer)
+		{
+			List<Port> ports = OSUtils.GetNetStatPorts();
+			List<int> portids = new List<int>();
+			foreach (Port port in ports)
+			{
+				if (port.pid == System.Diagnostics.Process.GetCurrentProcess().Id)
+				{
+					portids.Add(port.port_number);
+				}
+			}
+			if (portids.Count == 1)
+			{
+				return portids[0];
+			}
+		}
+		return -1;
 	}
 }
