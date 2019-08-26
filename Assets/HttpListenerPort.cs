@@ -26,7 +26,8 @@ public class HttpListenerPort : MonoBehaviour
 
 	void Start()
 	{
-		Pid.text = "Pid : " + System.Diagnostics.Process.GetCurrentProcess().Id.ToString();
+		int pid = System.Diagnostics.Process.GetCurrentProcess().Id;
+		Pid.text = "Pid : " + pid.ToString();
 		Debug.Log(Pid.text);
 	}
 
@@ -55,7 +56,7 @@ public class HttpListenerPort : MonoBehaviour
 				int port = FindOneOpenPort();
 				if (port != -1)
 				{
-					uriprefix = System.Text.RegularExpressions.Regex.Replace(uriprefix, @":(.*?)/", port.ToString());
+					uriprefix = System.Text.RegularExpressions.Regex.Replace(uriprefix, @"(.*//.*:)([0-9]+)(/.*)", m => m.Groups[1].Value + port + m.Groups[3].Value);
 					Debug.Log("uri is " + uriprefix);
 				}
 			}
@@ -134,26 +135,36 @@ public class HttpListenerPort : MonoBehaviour
 	public void DoGetPorts()
 	{
 		OpenedPort.text = "";
+		int ProcessID = System.Diagnostics.Process.GetCurrentProcess().Id;
+#if UNITY_EDITOR
+		ProcessID = 47056;
+		List<Port> ports = new List<Port>();
+		string output = Resources.Load<TextAsset>("NetCatOutput").text;
+		OSUtils.ParseNetcatOutput(output, ports);
+#else
 		List<Port> ports = OSUtils.GetNetStatPorts();
+#endif
 		foreach (Port port in ports)
 		{
-			if (port.pid == System.Diagnostics.Process.GetCurrentProcess().Id)
+			if (port.pid == ProcessID && port.state == "LISTENING")
 			{
 				OpenedPort.text = OpenedPort.text + port.port_number + " ";
 			}
-			// Debug.Log("Ports : " + port.name);
+			Debug.Log("Ports : " + port.name);
 		}
 	}
+
 
 	int FindOneOpenPort()
 	{
 		if (Application.platform == RuntimePlatform.WindowsPlayer)
 		{
+			int ProcessID = System.Diagnostics.Process.GetCurrentProcess().Id;
 			List<Port> ports = OSUtils.GetNetStatPorts();
 			List<int> portids = new List<int>();
 			foreach (Port port in ports)
 			{
-				if (port.pid == System.Diagnostics.Process.GetCurrentProcess().Id)
+				if (port.pid == ProcessID && port.state == "LISTENING")
 				{
 					portids.Add(port.port_number);
 				}

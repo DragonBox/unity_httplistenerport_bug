@@ -22,6 +22,8 @@ namespace WWTK.OSUtils
 		public int port_number { get; set; }
 		public string process_name { get; set; }
 		public string protocol { get; set; }
+
+		public string state { get; set; }
 		public int pid { get; set; }
 	}
 	class OSUtils
@@ -67,28 +69,38 @@ namespace WWTK.OSUtils
 					}
 
 					//Get The Rows
-					string[] rows = Regex.Split(content, "\r\n");
-					foreach (string row in rows)
-					{
-						//Split it baby
-						string[] tokens = Regex.Split(row, "\\s+");
-						if (tokens.Length > 4 && (tokens[1].Equals("UDP") || tokens[1].Equals("TCP")))
-						{
-							string localAddress = Regex.Replace(tokens[2], @"\[(.*?)\]", "1.1.1.1");
-							Ports.Add(new Port
-							{
-								protocol = localAddress.Contains("1.1.1.1") ? String.Format("{0}v6", tokens[1]) : String.Format("{0}v4", tokens[1]),
-								port_number = int.Parse(localAddress.Split(':')[1]),
-								process_name = tokens[1] == "UDP" ? LookupProcess(Convert.ToInt32(tokens[4])) : LookupProcess(Convert.ToInt32(tokens[5])),
-								pid = Convert.ToInt32(tokens[5])
-							});
-						}
-					}
+					return ParseNetcatOutput(content, Ports);
 				}
 			}
 			catch (Exception ex)
 			{
 				UnityEngine.Debug.LogException(ex);
+			}
+			return Ports;
+		}
+
+		public static List<Port> ParseNetcatOutput(string output, List<Port> Ports)
+		{
+			string[] rows = Regex.Split(output, "\r\n");
+
+			foreach (string row in rows)
+			{
+				//Split it baby
+				string[] tokens = Regex.Split(row, "\\s+");
+				if (tokens.Length > 4 && (tokens[1].Equals("UDP") || tokens[1].Equals("TCP")))
+				{
+					string localAddress = Regex.Replace(tokens[2], @"\[(.*?)\]", "1.1.1.1");
+					int pid = tokens[1] == "UDP" ? Convert.ToInt32(tokens[4]) : Convert.ToInt32(tokens[5]);
+					string state = tokens[1] == "UDP" ? "" : tokens[4];
+					Ports.Add(new Port
+					{
+						protocol = localAddress.Contains("1.1.1.1") ? String.Format("{0}v6", tokens[1]) : String.Format("{0}v4", tokens[1]),
+						port_number = int.Parse(localAddress.Split(':')[1]),
+						process_name = LookupProcess(pid),
+						state = state,
+						pid = pid
+					});
+				}
 			}
 			return Ports;
 		}
