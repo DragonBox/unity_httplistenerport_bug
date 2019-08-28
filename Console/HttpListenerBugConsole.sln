@@ -1,0 +1,20 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HttpListenerBugConsole", "HttpListenerBugConsole\HttpListenerBugConsole.csproj", "{80543110-A496-42DC-8325-D0794743EDEB}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x86 = Debug|x86
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{80543110-A496-42DC-8325-D0794743EDEB}.Debug|x86.ActiveCfg = Debug|x86
+		{80543110-A496-42DC-8325-D0794743EDEB}.Debug|x86.Build.0 = Debug|x86
+		{80543110-A496-42DC-8325-D0794743EDEB}.Release|x86.ActiveCfg = Release|x86
+		{80543110-A496-42DC-8325-D0794743EDEB}.Release|x86.Build.0 = Release|x86
+	EndGlobalSection
+	GlobalSection(MonoDevelopProperties) = preSolution
+		StartupItem = HttpListenerBugConsole\HttpListenerBugConsole.csproj
+	EndGlobalSection
+EndGlobal
